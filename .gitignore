@@ -1,0 +1,18 @@
+# --- Node / TypeScript ---
+node_modules/
+dist/
+.env
+*.log
+npm-debug.log*
+
+# --- Kotlin / Android ---
+.gradle/
+build/
+*.apk
+*.aab
+local.properties
+.idea/
+*.iml
+
+# --- General ---
+.DS_Store
