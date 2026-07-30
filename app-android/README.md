@@ -8,7 +8,7 @@ Apps (Cliente y Barbero)	Kotlin (Android)
 Versionamiento
 Herramienta	Versión
 Kotlin	2.2.x
-Android Gradle Plugin (AGP)	9.2.x
+Android Gradle Plugin (AGP)	9.3.1
 JDK	17
 Gradle	9.x
 Requisitos previos
