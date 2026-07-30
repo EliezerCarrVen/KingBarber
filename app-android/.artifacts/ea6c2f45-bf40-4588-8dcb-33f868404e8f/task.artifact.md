@@ -1,0 +1,4 @@
+- [x] Corregir `MainActivity.kt`: agregar importaciones y arreglar sintaxis
+- [x] Eliminar código innecesario (`Greeting`)
+- [x] Sincronizar proyecto con Gradle
+- [x] Verificar compilación mediante build
