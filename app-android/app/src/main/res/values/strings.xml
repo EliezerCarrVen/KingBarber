@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">KingBarber</string>
+    <!-- TODO: Este ID se genera automáticamente al añadir google-services.json -->
+    <string name="default_web_client_id">TU_CLIENT_ID_DE_GOOGLE.apps.googleusercontent.com</string>
 </resources>

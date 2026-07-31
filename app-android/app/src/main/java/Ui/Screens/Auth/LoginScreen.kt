@@ -1,4 +1,7 @@
 package Ui.Screens.Auth
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -7,7 +10,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -18,11 +23,15 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.itslerdo.barber.R
+import com.itslerdo.barber.ui.theme.KingBarberGray
+import com.itslerdo.barber.ui.theme.KingBarberNavy
+import com.itslerdo.barber.ui.theme.KingBarberTheme
 
 // TODO: reemplazar por los valores exactos que saques del panel "Inspect" de Figma
-private val KingBarberNavy = Color(0xFF16324A)
-private val KingBarberGray = Color(0xFF6B7280)
 
 @Composable
 fun LoginScreen(
@@ -38,7 +47,10 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val canSubmit = email.isNotBlank() && password.length >= 6 && !isLoading
+    val emailError = if (email.isNotEmpty() && !email.contains("@")) "Ingresa un correo válido" else null
+    val passwordError = if (password.isNotEmpty() && password.length < 8) "La contraseña debe tener al menos 8 caracteres" else null
+
+    val canSubmit = email.isNotBlank() && email.contains("@") && password.length >= 8 && !isLoading
 
     Column(
         modifier = Modifier
@@ -68,6 +80,8 @@ fun LoginScreen(
             onValueChange = { email = it },
             label = { Text("Correo") },
             singleLine = true,
+            isError = emailError != null,
+            supportingText = { emailError?.let { Text(it) } },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth()
         )
@@ -80,6 +94,8 @@ fun LoginScreen(
             onValueChange = { password = it },
             label = { Text("Contraseña") },
             singleLine = true,
+            isError = passwordError != null,
+            supportingText = { passwordError?.let { Text(it) } },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth()
@@ -196,6 +212,63 @@ fun LoginScreen(
 }
 
 /**
+ * Contenedor que maneja la lógica de autenticación (Google Sign-In, etc.)
+ * y se comunica con el LoginScreen.
+ */
+@Composable
+fun AuthScreenContainer(
+    onLoginSuccess: () -> Unit = {},
+    onRegisterClick: () -> Unit = {}
+) {
+    val context = LocalContext.current
+    val clientId = stringResource(id = R.string.default_web_client_id)
+
+    // TODO: Asegúrate de tener el archivo google-services.json en la carpeta /app
+    // para que R.string.default_web_client_id esté disponible.
+    val googleSignInClient = remember {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(clientId)
+            .requestEmail()
+            .build()
+        GoogleSignIn.getClient(context, gso)
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                val tokenDeGoogle = account.idToken
+
+                if (tokenDeGoogle != null) {
+                    // TODO: Aquí envías 'tokenDeGoogle' a tu API en Node.js
+                    println("Token listo para mandar a Node: $tokenDeGoogle")
+                    onLoginSuccess()
+                }
+
+            } catch (e: ApiException) {
+                println("Error al iniciar sesión con Google: ${e.message}")
+            }
+        }
+    }
+
+    LoginScreen(
+        onGoogleClick = {
+            googleSignInClient.signOut().addOnCompleteListener {
+                launcher.launch(googleSignInClient.signInIntent)
+            }
+        },
+        onLoginClick = { email, password ->
+            // Aquí iría tu lógica normal de Login con correo/password
+            println("Login con: $email / $password")
+        },
+        onRegisterClick = onRegisterClick
+    )
+}
+
+/**
  * Botón reutilizable para los proveedores sociales (Google / Apple).
  */
 @Composable
@@ -234,7 +307,7 @@ private fun SocialLoginButton(
 @Preview(showBackground = true)
 @Composable
 private fun LoginScreenPreview() {
-    MaterialTheme {
+    KingBarberTheme {
         LoginScreen(onLoginClick = { _, _ -> })
     }
 }
